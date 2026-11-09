@@ -128,23 +128,9 @@
         </div>
 
         <div class="mb-4">
-          <label class="form-label">วันที่สะดวกตรวจ</label>
-          <div class="row g-2">
-            <div class="col-4"><select id="day" class="form-select"><option value="">วัน</option></select></div>
-            <div class="col-4">
-              <select id="month" class="form-select">
-                <option value="">เดือน</option>
-                <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option>
-                <option value="03">มีนาคม</option><option value="04">เมษายน</option>
-                <option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
-                <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option>
-                <option value="09">กันยายน</option><option value="10">ตุลาคม</option>
-                <option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
-              </select>
-            </div>
-            <div class="col-4"><select id="year" class="form-select"><option value="">ปี</option></select></div>
-          </div>
-          <div class="unit-text">กรุณาเลือกวัน / เดือน / ปี พ.ศ.</div>
+          <label class="form-label" for="apptDate">วันที่สะดวกตรวจ</label>
+          <input type="date" id="apptDate" class="form-control">
+          <div class="unit-text" id="apptDateText">กรุณากดเลือกวันที่จากปฏิทิน</div>
         </div>
 
         <div class="mb-4">
@@ -185,18 +171,6 @@
 
   function $(id) { return document.getElementById(id); }
 
-  function createDays() {
-    for (let i = 1; i <= 31; i++) {
-      const v = String(i).padStart(2, '0');
-      $('day').add(new Option(v, v));
-    }
-  }
-
-  function createYears() {
-    const y = new Date().getFullYear() + 543;
-    for (let i = y; i <= y + 2; i++) $('year').add(new Option(String(i), String(i)));
-  }
-
   function showPage(form) {
     $('hospitalPage').style.display = form ? 'none' : 'block';
     $('formPage').style.display = form ? 'block' : 'none';
@@ -211,12 +185,22 @@
 
   function backToHospital() { showPage(false); }
 
+  function todayIso() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  // แปลง yyyy-mm-dd (ค.ศ.) เป็น dd/mm/yyyy (พ.ศ.)
+  function toThaiDate(iso) {
+    const p = iso.split('-');
+    return p[2] + '/' + p[1] + '/' + (Number(p[0]) + 543);
+  }
+
   function getAppointmentDate() {
-    const d = $('day').value, m = $('month').value, y = $('year').value;
-    if (!d || !m || !y) return '';
-    const dt = new Date(Number(y) - 543, Number(m) - 1, Number(d));
-    if (dt.getMonth() !== Number(m) - 1) return 'INVALID';
-    return d + '/' + m + '/' + y;
+    const v = $('apptDate').value;
+    if (!v) return '';
+    if (v < todayIso()) return 'INVALID';
+    return toThaiDate(v);
   }
 
   function showError(msg) {
@@ -243,7 +227,7 @@
     if (!weight) return showError('กรุณากรอกน้ำหนัก');
     if (!height) return showError('กรุณากรอกส่วนสูง');
     if (!appointmentDate) return showError('กรุณาเลือกวันที่สะดวกตรวจ');
-    if (appointmentDate === 'INVALID') return showError('วันที่ที่เลือกไม่ถูกต้อง');
+    if (appointmentDate === 'INVALID') return showError('กรุณาเลือกวันที่ตั้งแต่วันนี้เป็นต้นไป');
     if (!phone) return showError('กรุณากรอกเบอร์โทรศัพท์');
     if (!$('consent').checked) return showError('กรุณาติ๊กยินยอมการเก็บและใช้ข้อมูล');
 
@@ -305,16 +289,21 @@
   }
 
   function resetForm() {
-    ['firstName', 'lastName', 'hn', 'age', 'weight', 'height', 'disease', 'day', 'month', 'year', 'phone', 'hospital']
+    ['firstName', 'lastName', 'hn', 'age', 'weight', 'height', 'disease', 'apptDate', 'phone', 'hospital']
       .forEach(function (id) { $(id).value = ''; });
     $('consent').checked = false;
+    $('apptDateText').textContent = 'กรุณากดเลือกวันที่จากปฏิทิน';
     selectedHospital = '';
     showPage(false);
   }
 
   document.addEventListener('DOMContentLoaded', async function () {
-    createDays();
-    createYears();
+    $('apptDate').min = todayIso();
+    $('apptDate').addEventListener('change', function () {
+      $('apptDateText').textContent = this.value
+        ? 'วันที่เลือก: ' + toThaiDate(this.value) + ' (พ.ศ.)'
+        : 'กรุณากดเลือกวันที่จากปฏิทิน';
+    });
     try {
       await liff.init({ liffId: LIFF_ID });
       if (!liff.isLoggedIn()) { liff.login(); return; }
