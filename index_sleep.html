@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จองคิวตรวจการนอนหลับ</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; font-family: 'Noto Sans Thai', sans-serif; }
+    body { min-height: 100vh; background: linear-gradient(135deg, #0756a3, #0878c9, #0b8fd3); color: #333; }
+
+    .page { width: 100%; min-height: 100vh; padding: 30px 20px 50px; display: flex; justify-content: center; align-items: flex-start; }
+    .container-main { width: 100%; max-width: 1100px; }
+
+    .title { text-align: center; color: #fff; font-size: clamp(30px, 5vw, 52px); font-weight: 800; margin-bottom: 30px; text-shadow: 0 3px 6px rgba(0,0,0,.25); }
+
+    .card-custom { width: 100%; background: #fff; border-radius: 25px; padding: clamp(25px, 5vw, 50px); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+
+    .hospital-title { text-align: center; font-size: clamp(20px, 3vw, 28px); font-weight: 600; line-height: 1.5; margin-bottom: 28px; }
+    .hospital-button { width: 100%; min-height: 80px; padding: 15px 20px; margin-bottom: 18px; border-radius: 18px; border: 3px solid #0878c9; background: #fff; color: #0756a3; font-family: inherit; font-size: clamp(20px, 3vw, 27px); font-weight: 700; cursor: pointer; transition: background .2s, color .2s, transform .2s; }
+    .hospital-button:last-child { margin-bottom: 0; }
+    .hospital-button:hover { background: #0878c9; color: #fff; transform: translateY(-2px); }
+
+    .form-label { display: block; font-size: clamp(20px, 3vw, 26px); font-weight: 600; margin-bottom: 10px; }
+    .form-control, .form-select { width: 100%; min-height: 65px; border: 2px solid #c9c9c9; border-radius: 14px; padding: 12px 18px; font-family: inherit; font-size: clamp(20px, 3vw, 25px); color: #333; background-color: #fff; }
+    textarea.form-control { min-height: 130px; resize: vertical; }
+    .form-control:focus, .form-select:focus { border-color: #0878c9; box-shadow: 0 0 0 4px rgba(8,120,201,.15); outline: none; }
+    .form-control[readonly] { background: #f3f6f9; }
+
+    .unit-text { color: #666; font-size: 18px; margin-top: 5px; }
+    .optional-text { color: #777; font-size: 16px; font-weight: 400; }
+
+    .back-button { display: inline-block; background: #e8f3fb; color: #0756a3; border: none; border-radius: 14px; padding: 12px 25px; font-family: inherit; font-size: 20px; font-weight: 600; margin-bottom: 25px; cursor: pointer; }
+    .back-button:hover { background: #d7ebf8; }
+
+    .consent { display: flex; gap: 12px; align-items: flex-start; font-size: 18px; line-height: 1.6; color: #444; background: #f5f9fd; border-radius: 14px; padding: 16px 18px; }
+    .consent input { width: 24px; height: 24px; margin-top: 4px; flex-shrink: 0; }
+
+    .submit-button { width: 100%; min-height: 75px; margin-top: 15px; border: none; border-radius: 18px; background: linear-gradient(135deg, #0756a3, #0878c9); color: #fff; font-family: inherit; font-size: clamp(22px, 3.5vw, 30px); font-weight: 700; cursor: pointer; transition: .2s; }
+    .submit-button:hover { opacity: .9; }
+    .submit-button:disabled { opacity: .6; cursor: not-allowed; }
+
+    .contact-card { background: #f5f9fd; border-radius: 18px; padding: 25px; border-left: 7px solid #0878c9; }
+    .contact-title { font-size: clamp(20px, 3vw, 26px); font-weight: 700; margin-bottom: 15px; }
+    .contact-item { color: #555; font-size: clamp(18px, 2.8vw, 23px); margin-bottom: 10px; }
+    .contact-item:last-child { margin-bottom: 0; }
+    .contact-item a { color: #0756a3; font-weight: 700; text-decoration: none; }
+
+    @media (max-width: 767px) {
+      .page { padding: 18px 12px 35px; }
+      .title { margin-bottom: 22px; }
+      .card-custom { border-radius: 20px; padding: 22px 18px; }
+      .form-control, .form-select { min-height: 70px; font-size: 21px; }
+      .hospital-button { min-height: 90px; font-size: 21px; }
+      .hospital-title { font-size: 21px; }
+      .name-col { margin-bottom: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="page">
+  <div class="container-main">
+
+    <div class="title">จองคิวตรวจการนอนหลับ</div>
+
+    <!-- หน้าเลือกโรงพยาบาล -->
+    <div id="hospitalPage" class="card-custom">
+      <div class="hospital-title">กรุณาเลือกโรงพยาบาลที่ต้องการเข้ารับบริการ</div>
+      <button type="button" class="hospital-button" onclick="selectHospital('ศูนย์การแพทย์นนทบุรี')">ศูนย์การแพทย์นนทบุรี</button>
+      <button type="button" class="hospital-button" onclick="selectHospital('โรงพยาบาลเปาโล เกษตร')">โรงพยาบาลเปาโล เกษตร</button>
+      <button type="button" class="hospital-button" onclick="selectHospital('โรงพยาบาลจุฬาภรณ์')">โรงพยาบาลจุฬาภรณ์</button>
+    </div>
+
+    <!-- หน้าแบบฟอร์ม -->
+    <div id="formPage" style="display:none;">
+      <div class="card-custom">
+
+        <button type="button" class="back-button" onclick="backToHospital()">← เปลี่ยนโรงพยาบาล</button>
+
+        <div class="mb-4">
+          <label class="form-label" for="hospital">โรงพยาบาล</label>
+          <input type="text" id="hospital" class="form-control" readonly>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-md-6 name-col">
+            <label class="form-label" for="firstName">ชื่อ</label>
+            <input type="text" id="firstName" class="form-control" placeholder="กรุณากรอกชื่อ">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="lastName">นามสกุล</label>
+            <input type="text" id="lastName" class="form-control" placeholder="กรุณากรอกนามสกุล">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="hn">เลข HN</label>
+          <input type="text" id="hn" class="form-control" placeholder="กรุณากรอกเลข HN">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="age">อายุ</label>
+          <input type="number" id="age" class="form-control" placeholder="กรุณากรอกอายุ" min="1" max="150" inputmode="numeric">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="weight">น้ำหนัก</label>
+          <input type="number" id="weight" class="form-control" placeholder="กรุณากรอกน้ำหนัก" min="1" step="0.1" inputmode="decimal">
+          <div class="unit-text">กิโลกรัม (kg)</div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="height">ส่วนสูง</label>
+          <input type="number" id="height" class="form-control" placeholder="กรุณากรอกส่วนสูง" min="1" step="0.1" inputmode="decimal">
+          <div class="unit-text">เซนติเมตร (cm)</div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="disease">โรคประจำตัว <span class="optional-text">(ไม่บังคับ)</span></label>
+          <textarea id="disease" class="form-control" rows="3" placeholder="หากไม่มี สามารถเว้นว่างได้"></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">วันที่สะดวกตรวจ</label>
+          <div class="row g-2">
+            <div class="col-4"><select id="day" class="form-select"><option value="">วัน</option></select></div>
+            <div class="col-4">
+              <select id="month" class="form-select">
+                <option value="">เดือน</option>
+                <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option>
+                <option value="03">มีนาคม</option><option value="04">เมษายน</option>
+                <option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+                <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option>
+                <option value="09">กันยายน</option><option value="10">ตุลาคม</option>
+                <option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+              </select>
+            </div>
+            <div class="col-4"><select id="year" class="form-select"><option value="">ปี</option></select></div>
+          </div>
+          <div class="unit-text">กรุณาเลือกวัน / เดือน / ปี พ.ศ.</div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="phone">เบอร์โทรศัพท์</label>
+          <input type="tel" id="phone" class="form-control" placeholder="กรุณากรอกเบอร์โทรศัพท์" inputmode="tel">
+        </div>
+
+        <div class="mb-4">
+          <label class="consent">
+            <input type="checkbox" id="consent">
+            <span>ข้าพเจ้ายินยอมให้เก็บและใช้ข้อมูลส่วนบุคคลและข้อมูลสุขภาพข้างต้น เพื่อการนัดหมายและให้บริการตรวจการนอนหลับเท่านั้น</span>
+          </label>
+        </div>
+
+        <button type="button" id="submitButton" class="submit-button" onclick="submitBooking()">ยืนยันการจองคิว</button>
+      </div>
+
+      <div class="card-custom">
+        <div class="contact-card">
+          <div class="contact-title">หากมีข้อสงสัยเพิ่มเติม กรุณาติดต่อเจ้าหน้าที่</div>
+          <div class="contact-item">1. คุณ xxx <a href="tel:089xxxxxxx">089-xxxxxxx</a></div>
+          <div class="contact-item">2. คุณ xxx <a href="tel:089xxxxxxx">089-xxxxxxx</a></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ===== แก้สองค่านี้ก่อนอัปโหลด =====
+  const LIFF_ID = '2012251258-nM5U1lqi';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwRvaAnHM5fxmxwz_cPc--vTewtbNR5-lLLoMQvElQQvpt_yslVg7cWJvKQ68VTxdki/exec';
+  // ===================================
+
+  let selectedHospital = '';
+  let liffReady = false;
+
+  function $(id) { return document.getElementById(id); }
+
+  function createDays() {
+    for (let i = 1; i <= 31; i++) {
+      const v = String(i).padStart(2, '0');
+      $('day').add(new Option(v, v));
+    }
+  }
+
+  function createYears() {
+    const y = new Date().getFullYear() + 543;
+    for (let i = y; i <= y + 2; i++) $('year').add(new Option(String(i), String(i)));
+  }
+
+  function showPage(form) {
+    $('hospitalPage').style.display = form ? 'none' : 'block';
+    $('formPage').style.display = form ? 'block' : 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function selectHospital(name) {
+    selectedHospital = name;
+    $('hospital').value = name;
+    showPage(true);
+  }
+
+  function backToHospital() { showPage(false); }
+
+  function getAppointmentDate() {
+    const d = $('day').value, m = $('month').value, y = $('year').value;
+    if (!d || !m || !y) return '';
+    const dt = new Date(Number(y) - 543, Number(m) - 1, Number(d));
+    if (dt.getMonth() !== Number(m) - 1) return 'INVALID';
+    return d + '/' + m + '/' + y;
+  }
+
+  function showError(msg) {
+    Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบข้อมูล', text: msg, confirmButtonText: 'ตกลง', confirmButtonColor: '#0878c9' });
+  }
+
+  function showFail(msg) {
+    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg, confirmButtonText: 'ตกลง', confirmButtonColor: '#0878c9' });
+  }
+
+  function submitBooking() {
+    const v = function (id) { return $(id).value.trim(); };
+    const firstName = v('firstName'), lastName = v('lastName'), hn = v('hn');
+    const age = v('age'), weight = v('weight'), height = v('height');
+    const disease = v('disease'), phone = v('phone');
+    const appointmentDate = getAppointmentDate();
+
+    if (!liffReady) return showError('ไม่พบบัญชี LINE กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้ง');
+    if (!selectedHospital) return showError('กรุณาเลือกโรงพยาบาล');
+    if (!firstName) return showError('กรุณากรอกชื่อ');
+    if (!lastName) return showError('กรุณากรอกนามสกุล');
+    if (!hn) return showError('กรุณากรอกเลข HN');
+    if (!age) return showError('กรุณากรอกอายุ');
+    if (!weight) return showError('กรุณากรอกน้ำหนัก');
+    if (!height) return showError('กรุณากรอกส่วนสูง');
+    if (!appointmentDate) return showError('กรุณาเลือกวันที่สะดวกตรวจ');
+    if (appointmentDate === 'INVALID') return showError('วันที่ที่เลือกไม่ถูกต้อง');
+    if (!phone) return showError('กรุณากรอกเบอร์โทรศัพท์');
+    if (!$('consent').checked) return showError('กรุณาติ๊กยินยอมการเก็บและใช้ข้อมูล');
+
+    const data = {
+      accessToken: liff.getAccessToken(),
+      hospital: selectedHospital,
+      firstName: firstName,
+      lastName: lastName,
+      hn: hn,
+      age: age,
+      weight: weight,
+      height: height,
+      disease: disease,
+      appointmentDate: appointmentDate,
+      phone: phone
+    };
+
+    const btn = $('submitButton');
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึกข้อมูล...';
+
+    Swal.fire({
+      title: 'กำลังบันทึกข้อมูล', text: 'กรุณารอสักครู่',
+      allowOutsideClick: false, allowEscapeKey: false,
+      didOpen: function () { Swal.showLoading(); }
+    });
+
+    // ใช้ text/plain เพื่อหลีกเลี่ยง CORS preflight ที่ Apps Script ไม่รองรับ
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        btn.disabled = false;
+        btn.textContent = 'ยืนยันการจองคิว';
+
+        if (result && result.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'จองคิวสำเร็จ',
+            html: '<div style="font-size:20px;line-height:1.8;">เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันวันนัด<br><br>' +
+                  '<b>โรงพยาบาล</b><br>' + selectedHospital + '<br><br>' +
+                  '<b>ชื่อ-นามสกุล</b><br>' + firstName + ' ' + lastName + '<br><br>' +
+                  '<b>วันที่สะดวกตรวจ</b><br>' + appointmentDate + '</div>',
+            confirmButtonText: 'ตกลง', confirmButtonColor: '#0878c9'
+          }).then(resetForm);
+        } else {
+          showFail((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้');
+        }
+      })
+      .catch(function (err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.textContent = 'ยืนยันการจองคิว';
+        showFail('ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง');
+      });
+  }
+
+  function resetForm() {
+    ['firstName', 'lastName', 'hn', 'age', 'weight', 'height', 'disease', 'day', 'month', 'year', 'phone', 'hospital']
+      .forEach(function (id) { $(id).value = ''; });
+    $('consent').checked = false;
+    selectedHospital = '';
+    showPage(false);
+  }
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    createDays();
+    createYears();
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      liffReady = !!liff.getAccessToken();
+    } catch (err) {
+      console.error('LIFF error:', err);
+      Swal.fire({
+        icon: 'warning', title: 'เชื่อมต่อ LINE ไม่สำเร็จ',
+        text: 'กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้ง',
+        confirmButtonText: 'ตกลง', confirmButtonColor: '#0878c9'
+      });
+    }
+  });
+</script>
+</body>
+</html>
